@@ -98,7 +98,10 @@ func move(state GameState) BattlesnakeMoveResponse {
 	mybody := state.You.Body
 	count := [4]float64{0, 0, 0, 0}
 
-	for _, coords := range mybody {
+	for i, coords := range mybody {
+		if i == 0 {
+			continue
+		}
 		if coords.X < myHead.X {
 			count[0]++
 		} else if coords.X > myHead.X {
@@ -112,17 +115,15 @@ func move(state GameState) BattlesnakeMoveResponse {
 	}
 
 	for mod := range movePredictions {
-		if count[mod] > 0 {
-			movePredictions[mod] /= count[mod] * modifiers.BodyModifier
-		}
+		count[mod]++
+		movePredictions[mod] /= count[mod] * modifiers.BodyModifier
 	}
 
-	// Are there any safe moves left?
 	maximum := 0.0
 	for _, prediction := range movePredictions {
 		if prediction > 0.0 {
 			if maximum < prediction {
-				prediction = maximum
+				maximum = prediction
 			}
 		}
 	}
