@@ -13,8 +13,8 @@ package main
 // For more info see docs.battlesnake.com
 
 import (
+	"github.com/BattlesnakeOfficial/starter-snake-go/modifiers"
 	"log"
-	"math/rand"
 )
 
 // info is called when you create your Battlesnake on play.battlesnake.com
@@ -47,61 +47,112 @@ func end(state GameState) {
 // See https://docs.battlesnake.com/api/example-move for available data
 func move(state GameState) BattlesnakeMoveResponse {
 
-	isMoveSafe := map[string]bool{
-		"up":    true,
-		"down":  true,
-		"left":  true,
-		"right": true,
+	movePredictions := [4]float64{
+		100, 100, 100, 100,
 	}
 
 	// We've included code to prevent your Battlesnake from moving backwards
 	myHead := state.You.Body[0] // Coordinates of your head
 	myNeck := state.You.Body[1] // Coordinates of your "neck"
-
+	// Left, Right, Up, Down
 	if myNeck.X < myHead.X { // Neck is left of head, don't move left
-		isMoveSafe["left"] = false
+		movePredictions[0] = 0
 
 	} else if myNeck.X > myHead.X { // Neck is right of head, don't move right
-		isMoveSafe["right"] = false
+		movePredictions[1] = 0
 
 	} else if myNeck.Y < myHead.Y { // Neck is below head, don't move down
-		isMoveSafe["down"] = false
+		movePredictions[3] = 0
 
 	} else if myNeck.Y > myHead.Y { // Neck is above head, don't move up
-		isMoveSafe["up"] = false
+		movePredictions[2] = 0
 	}
 
 	// TODO: Step 1 - Prevent your Battlesnake from moving out of bounds
-	// boardWidth := state.Board.Width
-	// boardHeight := state.Board.Height
+	boardWidth := state.Board.Width
+	boardHeight := state.Board.Height
+
+	var mov [4]float64
+	mov[0] = float64(-(boardWidth-1)/2 + myHead.X)
+	mov[1] = float64(-myHead.X + (boardWidth)/2)
+	mov[3] = float64(-(boardHeight-1)/2 + myHead.Y)
+	mov[2] = float64(-myHead.Y + (boardHeight)/2)
+
+	for _, m := range mov {
+		if m < 2 {
+			m += float64(boardWidth)
+			m /= float64(boardWidth)
+		} else {
+			m += float64(boardHeight)
+			m /= float64(boardHeight)
+		}
+
+		m *= modifiers.PositionModifier
+	}
+
+	for mod := range movePredictions {
+		movePredictions[mod] *= mov[mod]
+	}
 
 	// TODO: Step 2 - Prevent your Battlesnake from colliding with itself
-	// mybody := state.You.Body
+	mybody := state.You.Body
+	count := [4]float64{0, 0, 0, 0}
 
-	// TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
-	// opponents := state.Board.Snakes
-
-	// Are there any safe moves left?
-	safeMoves := []string{}
-	for move, isSafe := range isMoveSafe {
-		if isSafe {
-			safeMoves = append(safeMoves, move)
+	for _, coords := range mybody {
+		if coords.X < myHead.X {
+			count[0]++
+		} else if coords.X > myHead.X {
+			count[1]++
+		}
+		if coords.Y < myHead.Y {
+			count[3]++
+		} else if coords.Y > myHead.Y {
+			count[2]++
 		}
 	}
 
-	if len(safeMoves) == 0 {
-		log.Printf("MOVE %d: No safe moves detected! Moving down\n", state.Turn)
-		return BattlesnakeMoveResponse{Move: "down"}
+	for mod := range movePredictions {
+		if count[mod] > 0 {
+			movePredictions[mod] /= count[mod] * modifiers.BodyModifier
+		}
 	}
 
-	// Choose a random move from the safe ones
-	nextMove := safeMoves[rand.Intn(len(safeMoves))]
+	// Are there any safe moves left?
+	maximum := 0.0
+	for _, prediction := range movePredictions {
+		if prediction > 0.0 {
+			if maximum < prediction {
+				prediction = maximum
+			}
+		}
+	}
 
+	for p := range movePredictions {
+		if maximum == movePredictions[p] {
+			if p == 0 {
+				log.Printf("MOVE %d: %s\n", state.Turn, "left")
+				return BattlesnakeMoveResponse{Move: "left"}
+			} else if p == 1 {
+				log.Printf("MOVE %d: %s\n", state.Turn, "right")
+				return BattlesnakeMoveResponse{Move: "right"}
+			} else if p == 2 {
+				log.Printf("MOVE %d: %s\n", state.Turn, "up")
+				return BattlesnakeMoveResponse{Move: "up"}
+			} else {
+				log.Printf("MOVE %d: %s\n", state.Turn, "down")
+				return BattlesnakeMoveResponse{Move: "down"}
+			}
+		}
+	}
+	// TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
+	// opponents := state.Board.Snakes
+
+	// Choose a random move from the safe ones
 	// TODO: Step 4 - Move towards food instead of random, to regain health and survive longer
 	// food := state.Board.Food
 
-	log.Printf("MOVE %d: %s\n", state.Turn, nextMove)
-	return BattlesnakeMoveResponse{Move: nextMove}
+	log.Printf("MOVE %d: %s\n", state.Turn, "up")
+	return BattlesnakeMoveResponse{Move: "up"}
 }
 
 func main() {
