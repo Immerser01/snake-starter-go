@@ -73,20 +73,17 @@ func move(state GameState) BattlesnakeMoveResponse {
 	boardHeight := state.Board.Height
 
 	var mov [4]float64
-	mov[0] = float64(-(boardWidth-1)/2 + myHead.X)
-	mov[1] = float64(-myHead.X + (boardWidth)/2)
-	mov[3] = float64(-(boardHeight-1)/2 + myHead.Y)
-	mov[2] = float64(-myHead.Y + (boardHeight)/2)
+	mov[0] = float64(myHead.X)
+	mov[1] = float64(boardWidth - 1 - myHead.X)
+	mov[3] = float64(myHead.Y)
+	mov[2] = float64(boardHeight - 1 - myHead.Y)
 
-	for _, m := range mov {
-		if m < 2 {
-			m += float64(boardWidth)
+	for i, m := range mov {
+		if i < 2 {
 			m /= float64(boardWidth)
 		} else {
-			m += float64(boardHeight)
 			m /= float64(boardHeight)
 		}
-
 		m *= modifiers.PositionModifier
 	}
 
@@ -94,7 +91,7 @@ func move(state GameState) BattlesnakeMoveResponse {
 		movePredictions[mod] *= mov[mod]
 	}
 
-	// TODO: Step 2 - Prevent your Battlesnake from colliding with itself
+	//TODO: Step 2 - Prevent your Battlesnake from colliding with itself
 	mybody := state.You.Body
 	count := [4]float64{0, 0, 0, 0}
 
@@ -118,13 +115,11 @@ func move(state GameState) BattlesnakeMoveResponse {
 		count[mod]++
 		movePredictions[mod] /= count[mod] * modifiers.BodyModifier
 	}
-
+	//
 	maximum := 0.0
 	for _, prediction := range movePredictions {
-		if prediction > 0.0 {
-			if maximum < prediction {
-				maximum = prediction
-			}
+		if prediction > maximum {
+			maximum = prediction
 		}
 	}
 

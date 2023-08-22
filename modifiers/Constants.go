@@ -1,6 +1,6 @@
 package modifiers
 
 const (
-	PositionModifier = 0.6
+	PositionModifier = 1
 	BodyModifier     = 0.2
 )
