@@ -140,13 +140,7 @@ func move(state GameState) BattlesnakeMoveResponse {
 			}
 		}
 	}
-	// TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
-	// opponents := state.Board.Snakes
-
-	// Choose a random move from the safe ones
-	// TODO: Step 4 - Move towards food instead of random, to regain health and survive longer
-	// food := state.Board.Food
-
+	
 	log.Printf("MOVE %d: %s\n", state.Turn, "up")
 	return BattlesnakeMoveResponse{Move: "up"}
 }
